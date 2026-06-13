@@ -4,7 +4,7 @@
 <img src="https://img.shields.io/badge/Flask-2.x-000000?style=for-the-badge&logo=flask&logoColor=white"/>
 <img src="https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white"/>
 <img src="https://img.shields.io/badge/bcrypt-Auth-brightgreen?style=for-the-badge&logo=letsencrypt&logoColor=white"/>
-<img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge"/>
+
 
 # 🏦 Smart Bank Management System
 
@@ -620,14 +620,12 @@ Please follow **PEP 8** for Python code. Keep route handlers focused — move bu
 
 ---
 
-## 📄 License
 
-This project is licensed under the [MIT License](LICENSE).
 
 ---
 
 <div align="center">
 
-Built with ❤️ by **Group 4** &nbsp;·&nbsp; Flask + MySQL &nbsp;·&nbsp; Academic Project
+Built with ❤️ by **Shlok Chorghe** &nbsp;·&nbsp; Flask + MySQL &nbsp;·&nbsp; Academic Project
 
 </div>
