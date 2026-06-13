@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SBMS | Contact Us</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="icon" href="{{ url_for('static', filename='images/banklogo.png') }}">
+</head>
+<body>
+
+<header class="navbar">
+    <div class="logo"><span class="highlight">SBMS</span> Bank</div>
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('home') }}" class="nav-item">Home</a></li>
+            <li><a href="{{ url_for('about') }}" class="nav-item">About</a></li>
+            <li><a href="{{ url_for('contact') }}" class="nav-item active">Contact</a></li>
+            <li class="nav-actions">
+                {% if 'user' in session %}
+                    <a href="{{ url_for('dashboard') }}" class="nav-login-btn">Dashboard</a>
+                    <a href="{{ url_for('logout') }}" class="nav-login-btn logout">Logout</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="nav-login-btn">Login</a>
+                    <a href="{{ url_for('signup') }}" class="nav-signup-btn">Sign Up</a>
+                {% endif %}
+            </li>
+        </ul>
+    </nav>
+    <div class="live-clock" id="live-clock"></div>
+</header>
+
+
+
+<section class="hero">
+    <div class="hero-content">
+        <h1>Contact Us</h1>
+        <p>Get in touch with our support team anytime.</p>
+    </div>
+</section>
+
+<section class="featured-services">
+    <h2>Contact Information</h2>
+    <div class="featured-grid">
+        <div class="featured-card">
+            <i class="fas fa-phone-alt card-icon"></i>
+            <h3>Phone</h3>
+            <p><a href="tel:+918237340805" class="contact-link">+91-8237340805</a></p>
+        </div>
+        <div class="featured-card">
+            <i class="fas fa-envelope card-icon"></i>
+            <h3>Email</h3>
+            <p><a href="mailto:support@sbmsbank.com" class="contact-link">support@sbmsbank.com</a></p>
+        </div>
+        <div class="featured-card">
+            <i class="fas fa-map-marker-alt card-icon"></i>
+            <h3>Address</h3>
+            <p>666, Upper Indira Nagar<br>Pune, Maharashtra<br>India - 411037</p>
+        </div>
+    </div>
+
+    <div class="featured-card support-hours">
+        <i class="fas fa-clock card-icon"></i>
+        <h3>Support Hours</h3>
+        <p><strong>Monday - Friday</strong><br>9:00 AM - 6:00 PM IST</p>
+        <p class="note">Emergency support available 24/7 via email</p>
+    </div>
+</section>
+
+<section class="contact-form-section">
+    <div class="container">
+        <h2 class="section-title">Send Us a Message</h2>
+        <form class="contact-form" action="{{ url_for('contact') }}" method="POST">
+            <div class="form-group">
+                <input type="text" name="name" placeholder="Your Name" required>
+            </div>
+            <div class="form-group">
+                <input type="email" name="email" placeholder="Your Email" required>
+            </div>
+            <div class="form-group">
+                <input type="text" name="account_no" 
+                       placeholder="Account Number (Optional)" 
+                       value="{{ user_account }}" 
+                       {% if 'user' in session %}readonly{% endif %}
+                       maxlength="20">
+            </div>
+            <div class="form-group">
+                <input type="text" name="subject" placeholder="Subject" required>
+            </div>
+            <div class="form-group">
+                <textarea name="message" rows="5" placeholder="Your Message" required></textarea>
+            </div>
+            <button type="submit" class="submit-btn">Send Message</button>
+        </form>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <p class="flash-{{ category }}">{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+    </div>
+</section>
+
+<footer>
+    <div class="footer-content">
+        <h3>SBMS | Smart Bank Management System</h3>
+        <p>Developed by <strong>Group ELITE</strong> | DBMS Course Project</p>
+        <p> 2025 SBMS. All Rights Reserved.</p>
+        <div class="footer-links">
+            <a href="{{ url_for('about') }}">About</a> | 
+            <a href="{{ url_for('contact') }}">Contact Us</a>
+        </div>
+        
+    </div>
+</footer>
+
+<script>
+    function updateClock() {
+        const now = new Date();
+        const options = { 
+            timeZone: 'Asia/Kolkata', 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit', 
+            hour12: true 
+        };
+        const timeString = now.toLocaleTimeString('en-US', options);
+        const dateString = now.toLocaleDateString('en-US', { 
+            month: 'long', 
+            day: 'numeric', 
+            year: 'numeric' 
+        });
+        document.getElementById('live-clock').innerHTML = 
+            `<i class="fas fa-clock"></i> ${timeString} IST | ${dateString}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+</script>
+</body>
+</html>

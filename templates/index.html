@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SBMS | Smart Bank Management System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='images/banklogo.png') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+</head>
+<body>
+    
+    <header class="navbar">
+        <div class="logo"><span class="highlight">SBMS</span> Bank</div>
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('home') }}" class="nav-item {{ 'active' if request.endpoint == 'home' }}">Home</a></li>
+                <li><a href="{{ url_for('accounts') }}" class="nav-item {{ 'active' if request.endpoint == 'accounts' }}">Accounts</a></li>
+                <li><a href="{{ url_for('loans') }}" class="nav-item {{ 'active' if request.endpoint == 'loans' }}">Loans</a></li>
+                <li><a href="{{ url_for('reports') }}" class="nav-item {{ 'active' if request.endpoint == 'reports' }}">Reports</a></li>
+                <li><a href="{{ url_for('contact') }}" class="nav-item {{ 'active' if request.endpoint == 'contact' }}">Support</a></li>
+                <li class="nav-actions">
+                    {% if 'user' in session %}
+                        <a href="{{ url_for('dashboard') }}" class="login-btn">Dashboard</a>
+                        <a href="{{ url_for('logout') }}" class="signup-btn">Logout</a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="nav-login-btn">Login</a>
+                        <a href="{{ url_for('signup') }}" class="nav-signup-btn">Sign Up</a>
+                    {% endif %}
+                </li>
+            </ul>
+        </nav>
+        <div class="live-clock" id="live-clock"></div>
+    </header>
+
+<div class="logo-hero">
+    <img src="{{ url_for('static', filename='images/logo.png') }}" 
+         alt="SBMS Bank Logo" 
+         class="bank-logo">
+</div>
+    
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Secure. Smart. Seamless Banking.</h1>
+            <p>Empowering your financial journey with trust and cutting-edge technology.</p>
+            <div class="search-bar">
+                <input type="text" placeholder="Search services, loans, or accounts..." id="search-input">
+                <button onclick="searchFunction()"><i class="fas fa-search"></i></button>
+            </div>
+        </div>
+    </section>
+
+    
+<section class="featured-services">
+    <div class="container">
+        <h2 class="section-title">Banking at a Glance</h2>
+        <div class="featured-grid">
+
+           
+            <div class="featured-card">
+                <h3>FD Rates</h3>
+                <p class="rate-highlight">Up to 6.8% p.a.</p>
+                <ul class="rate-list">
+                    <li>1 Year → 6.2%</li>
+                    <li>3 Year → 6.8%</li>
+                    <li>Min ₹1,000</li>
+                </ul>
+                <a href="{{ url_for('login') }}" class="btn-card">Login to View</a>
+            </div>
+
+           
+            <div class="featured-card">
+                <h3>Loan Rates</h3>
+                <p class="rate-highlight">From 8.5% p.a.</p>
+                <ul class="rate-list">
+                    <li>Home → 8.5%</li>
+                    <li>Car  → 9.2%</li>
+                    <li>Personal → 11.5%</li>
+                </ul>
+                <a href="{{ url_for('login') }}" class="btn-card">Login to Apply</a>
+            </div>
+
+            
+            <div class="featured-card">
+                <h3>EMI Calculator</h3>
+                <p class="rate-highlight">Example:</p>
+                <div class="emi-example">
+                    <p><strong>₹50L @ 8.5%</strong></p>
+                    <p>20 Yrs → <strong>₹43,391</strong>/mo</p>
+                </div>
+                <a href="{{ url_for('login') }}" class="btn-card">Login to Use</a>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+
+<section class="departments-section">
+    <div class="container">
+        <h2 class="section-title">Explore Our Bank Departments</h2>
+        <div class="departments-grid">
+
+         
+            <div class="dept-card">
+                <div class="dept-icon">
+                    <i class="fas fa-university"></i>
+                </div>
+                <h3>Accounts</h3>
+                <p>Open and manage customer bank accounts with ease and security.</p>
+                <a href="{{ url_for('login') }}" class="dept-btn">Login to Manage</a>
+            </div>
+
+            <div class="dept-card">
+                <div class="dept-icon">
+                    <i class="fas fa-hand-holding-usd"></i>
+                </div>
+                <h3>Loans</h3>
+                <p>Process and monitor all types of loans with automated tracking.</p>
+                <a href="{{ url_for('login') }}" class="dept-btn">Login to Apply</a>
+            </div>
+
+           
+            <div class="dept-card">
+                <div class="dept-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3>Customers</h3>
+                <p>Store and update verified customer details, KYC, and account data.</p>
+                <a href="{{ url_for('login') }}" class="dept-btn">Login to View</a>
+            </div>
+
+            
+            <div class="dept-card">
+                <div class="dept-icon">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <h3>Reports</h3>
+                <p>Generate comprehensive financial and operational analytics.</p>
+                <a href="{{ url_for('login') }}" class="dept-btn">Login to View</a>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+
+<section class="testimonials-section">
+    <div class="container">
+        <h2 class="section-title">What Our Customers Say</h2>
+        <div class="testimonial-slider">
+
+            <div class="testimonial-item">
+                <div class="testimonial-content">
+                    <p class="quote">
+                        "SBMS made my home loan process incredibly smooth. Got approval in just 3 days!"
+                    </p>
+                    <div class="author">
+                        <strong>Gautam Adani</strong>
+                        <span>Business Owner, Mumbai</span>
+                    </div>
+                </div>
+                <div class="rating">★★★★★</div>
+            </div>
+
+            
+            <div class="testimonial-item">
+                <div class="testimonial-content">
+                    <p class="quote">
+                        "Best FD rates in the market and zero hidden charges. Highly recommended!"
+                    </p>
+                    <div class="author">
+                        <strong>Priya Sharma</strong>
+                        <span>Teacher, Delhi</span>
+                    </div>
+                </div>
+                <div class="rating">★★★★★</div>
+            </div>
+
+          
+            <div class="testimonial-item">
+                <div class="testimonial-content">
+                    <p class="quote">
+                        "24/7 support team resolved my query at midnight. Truly customer-first!"
+                    </p>
+                    <div class="author">
+                        <strong>Mukesh Ambani</strong>
+                        <span>Software Engineer, Bangalore</span>
+                    </div>
+                </div>
+                <div class="rating">★★★★★</div>
+            </div>
+
+        </div>
+        
+        <div class="slider-dots">
+            <span class="dot active"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+        </div>
+    </div>
+</section>
+    
+    <footer>
+        <div class="footer-content">
+            <h3>SBMS | Smart Bank Management System</h3>
+            <p>Developed by <strong>Group SBMS</strong> | DBMS Course Project</p>
+            <p>2025 SBMS. All Rights Reserved.</p>
+            <div class="footer-links">
+                <a href="{{ url_for('about') }}">About</a> | 
+                <a href="{{ url_for('contact') }}">Contact Us</a>
+            </div>
+            
+        </div>
+    </footer>
+
+  
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script>
+        
+        function updateClock() {
+            const now = new Date();
+            const options = { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+            const timeString = now.toLocaleTimeString('en-US', options);
+            document.getElementById('live-clock').textContent = `Current Time: ${timeString} IST | Date: ${now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+       
+        function searchFunction() {
+            const query = document.getElementById('search-input').value;
+            alert(`Searching for: ${query}. This is a placeholder - implement backend search!`);
+        }
+    </script>
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+</body>
+</html>

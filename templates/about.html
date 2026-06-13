@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SBMS | About Us</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="icon" href="{{ url_for('static', filename='images/banklogo.png') }}">
+</head>
+<body>
+ 
+    <header class="navbar">
+        <div class="logo"><span class="highlight">SBMS</span> Bank</div>
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('home') }}" class="nav-item">Home</a></li>
+                <li><a href="{{ url_for('about') }}" class="nav-item active">About</a></li>
+                <li><a href="{{ url_for('contact') }}" class="nav-item">Contact</a></li>
+                <li class="nav-actions">
+                    {% if 'user' in session %}
+                        <a href="{{ url_for('logout') }}" class="auth-btn nav-login-btn logout">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="auth-btn nav-login-btn">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </a>
+                        <a href="{{ url_for('signup') }}" class="auth-btn nav-signup-btn">
+                            <i class="fas fa-user-plus"></i> Sign Up
+                        </a>
+                    {% endif %}
+                </li>
+            </ul>
+        </nav>
+        <div class="live-clock" id="live-clock"></div>
+    </header>
+
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>About SBMS</h1>
+            <p>Learn about our mission and vision.</p>
+        </div>
+    </section>
+
+  
+    <section class="featured-services">
+        <h2 class="section-title">Our Story</h2>
+        <div class="featured-grid">
+            <div class="featured-card">
+                <div class="card-icon">
+                    <i class="fas fa-bullseye"></i>
+                </div>
+                <h3>Our Mission</h3>
+                <p>To deliver exceptional banking services that prioritize customer satisfaction, security, and technological advancement.</p>
+            </div>
+            <div class="featured-card">
+                <div class="card-icon">
+                    <i class="fas fa-eye"></i>
+                </div>
+                <h3>Our Vision</h3>
+                <p>To become a leading digital banking platform by 2030, transforming financial management with innovation.</p>
+            </div>
+        </div>
+    </section>
+
+   
+    <footer>
+        <div class="footer-content">
+            <h3>SBMS | Smart Bank Management System</h3>
+            <p>Developed by <strong>Group ELITE</strong> | DBMS Course Project</p>
+            <p> 2025 SBMS. All Rights Reserved.</p>
+            <div class="footer-links">
+                <a href="{{ url_for('about') }}">About</a> | 
+                <a href="{{ url_for('contact') }}">Contact Us</a>
+            </div>
+            
+        </div>
+    </footer>
+
+    
+    <script>
+        function updateClock() {
+            const now = new Date();
+            const options = { 
+                timeZone: 'Asia/Kolkata', 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit', 
+                hour12: true 
+            };
+            const timeString = now.toLocaleTimeString('en-US', options);
+            const dateString = now.toLocaleDateString('en-US', { 
+                month: 'long', 
+                day: 'numeric', 
+                year: 'numeric' 
+            });
+            document.getElementById('live-clock').innerHTML = 
+                `<i class="fas fa-clock"></i> Current Time: ${timeString} IST | Date: ${dateString}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
+</body>
+</html>

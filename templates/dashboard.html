@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SBMS | Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .oblong {
+            border-radius: 30px !important;
+            margin-bottom: 8px;
+        }
+        .list-group-item.active {
+            background-color: #003973 !important;
+            border-color: #003973 !important;
+        }
+        .badge-approved { background-color: #28a745; }
+        .badge-rejected { background-color: #dc3545; }
+        .badge-pending { background-color: #ffc107; color: #212529; }
+        .amount-positive { color: #28a745 !important; font-weight: bold; }
+        .amount-negative { color: #dc3545 !important; font-weight: bold; }
+    </style>
+</head>
+<body>
+<header class="navbar bg-primary text-white">
+    <div class="container-fluid">
+        <div class="logo"><span class="highlight text-warning">SBMS</span> Bank</div>
+        <nav>
+            <ul class="nav">
+                <li class="nav-item"><a href="{{ url_for('dashboard') }}" class="nav-link text-white active">Dashboard</a></li>
+                {% if user.type == 'staff' %}
+                <li class="nav-item"><a href="{{ url_for('reports') }}" class="nav-link text-white">Reports</a></li>
+                {% endif %}
+                <li class="nav-item"><a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">Logout</a></li>
+            </ul>
+        </nav>
+        <div class="live-clock text-white" id="live-clock"></div>
+    </div>
+</header>
+
+<section class="dashboard container mt-4">
+    <h1 class="mb-4">Welcome, {{ user.name }}! 
+        <small class="text-muted">
+            {% if user.type=='staff' %}(Staff){% else %}(Customer){% endif %}
+        </small>
+    </h1>
+
+    <div class="row">
+        
+        <div class="col-md-3">
+            <div class="list-group">
+                {% if user.type == 'customer' %}
+                    {% if not data.has_account %}
+                        <a href="{{ url_for('dashboard', form='open') }}" 
+                           class="list-group-item list-group-item-action oblong {% if active_form=='open' %}active{% endif %}">
+                            Open Bank Account
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('dashboard', form='deposit') }}" class="list-group-item list-group-item-action oblong {% if active_form=='deposit' %}active{% endif %}">Deposit</a>
+                        <a href="{{ url_for('dashboard', form='withdraw') }}" class="list-group-item list-group-item-action oblong {% if active_form=='withdraw' %}active{% endif %}">Withdraw</a>
+                        <a href="{{ url_for('dashboard', form='transfer') }}" 
+                           class="list-group-item list-group-item-action oblong {% if active_form=='transfer' %}active{% endif %}">
+                            Send Money
+                        </a>
+                        <a href="{{ url_for('dashboard', form='fd') }}" class="list-group-item list-group-item-action oblong {% if active_form=='fd' %}active{% endif %}">Fixed Deposit</a>
+                        <a href="{{ url_for('dashboard', form='loan') }}" class="list-group-item list-group-item-action oblong {% if active_form=='loan' %}active{% endif %}">Apply Loan</a>
+                    {% endif %}
+                    <a href="{{ url_for('dashboard') }}" class="list-group-item list-group-item-action oblong">Close Form</a>
+
+                {% else %}
+                    <a href="{{ url_for('dashboard', form='create_account') }}" class="list-group-item list-group-item-action oblong {% if active_form=='create_account' %}active{% endif %}">
+                        Create Customer Account
+                    </a>
+                    <a href="{{ url_for('dashboard', form='review_loans') }}" class="list-group-item list-group-item-action oblong {% if active_form=='review_loans' %}active{% endif %}">
+                        Review Loan Requests
+                    </a>
+                    <a href="{{ url_for('dashboard', form='view_loans') }}" 
+                       class="list-group-item list-group-item-action oblong {% if active_form=='view_loans' %}active{% endif %}">
+                        View All Active Loans
+                    </a>
+                    <a href="{{ url_for('dashboard', form='view_fds') }}" 
+                       class="list-group-item list-group-item-action oblong {% if active_form=='view_fds' %}active{% endif %}">
+                        View All Fixed Deposits
+                    </a>
+                    <a href="{{ url_for('dashboard') }}" class="list-group-item list-group-item-action oblong">Close Form</a>
+                {% endif %}
+            </div>
+        </div>
+
+        
+        <div class="col-md-9">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for cat, msg in messages %}
+                        <div class="alert alert-{{ 'danger' if cat=='danger' else 'success' }} alert-dismissible fade show">
+                            {{ msg }} <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+           
+            {% if user.type == 'customer' and active_form == 'open' and not data.has_account %}
+                <div class="card p-4 shadow-sm">
+                    <h4>Open New Bank Account</h4>
+                    <form method="POST">
+                        <input type="hidden" name="open_account" value="1">
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label>Full Name</label>
+                                <input type="text" class="form-control" value="{{ user.name }}" disabled>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>Email</label>
+                                <input type="email" class="form-control" value="{{ session.user.email|default('') }}" disabled>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label>Aadhaar Number <span class="text-danger">*</span></label>
+                                <input type="text" name="aadhaar" class="form-control" placeholder="123456789012" maxlength="12" required>
+                                <small class="text-muted">12 digits only</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>PAN Number <span class="text-danger">*</span></label>
+                                <input type="text" name="pan" class="form-control" placeholder="ABCDE1234F" maxlength="10" required>
+                                <small class="text-muted">e.g., ABCDE1234F</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Address <span class="text-danger">*</span></label>
+                            <textarea name="address" class="form-control" rows="2" placeholder="123, MG Road, Bandra West, Mumbai - 400050" required></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label>Account Type</label>
+                                <select name="account_type" class="form-select" required>
+                                    <option>Savings</option>
+                                    <option>Current</option>
+                                    <option>Fixed Deposit</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>Initial Deposit (INR) <span class="text-danger">*</span></label>
+                                <input type="number" name="initial_deposit" class="form-control" step="0.01" min="500" value="1000" required>
+                                <small class="text-muted">Min INR 500 for Savings</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Account Number (Auto-generated)</label>
+                            <input type="text" class="form-control" value="{{ data.next_account_no }}" disabled>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg">Open Account</button>
+                    </form>
+                </div>
+
+        
+            {% elif user.type == 'staff' and active_form == 'create_account' %}
+                <div class="card p-4 shadow-sm">
+                    <h4>Create Account for Customer</h4>
+                    <form method="POST">
+                        <input type="hidden" name="staff_create_account" value="1">
+                        
+                        <div class="mb-3">
+                            <label>Select Customer</label>
+                            <select name="user_id" class="form-select" required>
+                                <option value="">-- Choose Customer --</option>
+                                {% for cust in data.customers_list %}
+                                    <option value="{{ cust.user_id }}">{{ cust.full_name }} ({{ cust.user_id }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label>Aadhaar Number <span class="text-danger">*</span></label>
+                                <input type="text" name="aadhaar" class="form-control" placeholder="123456789012" maxlength="12" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>PAN Number <span class="text-danger">*</span></label>
+                                <input type="text" name="pan" class="form-control" placeholder="ABCDE1234F" maxlength="10" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Address <span class="text-danger">*</span></label>
+                            <textarea name="address" class="form-control" rows="2" placeholder="Full residential address" required></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label>Account Type</label>
+                                <select name="account_type" class="form-select" required>
+                                    <option>Savings</option>
+                                    <option>Current</option>
+                                    <option>Fixed Deposit</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>Initial Balance (INR)</label>
+                                <input type="number" name="initial_balance" class="form-control" step="0.01" min="0" value="0" required>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success btn-lg">Create Account</button>
+                    </form>
+                </div>
+
+            
+            {% elif active_form == 'deposit' and data.has_account %}
+                <div class="card p-4 shadow-sm">
+                    <h4>Deposit Money</h4>
+                    <form method="POST">
+                        <input type="hidden" name="deposit" value="1">
+                        <div class="mb-3">
+                            <label>Account</label>
+                            <input type="text" class="form-control" value="{{ data.account.account_no }} – {{ data.account.account_type }}" disabled>
+                        </div>
+                        <div class="mb-3">
+                            <label>Amount (INR)</label>
+                            <input type="number" name="amount" class="form-control" step="0.01" min="1" required>
+                        </div>
+                        <button type="submit" class="btn btn-success">Deposit</button>
+                    </form>
+                </div>
+
+            {% elif active_form == 'withdraw' and data.has_account %}
+                <div class="card p-4 shadow-sm">
+                    <h4>Withdraw Money</h4>
+                    <form method="POST">
+                        <input type="hidden" name="withdraw" value="1">
+                        <div class="mb-3">
+                            <label>Account</label>
+                            <input type="text" class="form-control" value="{{ data.account.account_no }} – Balance: Rs.{{ data.account.balance|round(2) }}" disabled>
+                        </div>
+                        <div class="mb-3">
+                            <label>Amount (INR)</label>
+                            <input type="number" name="amount" class="form-control" step="0.01" min="1" max="{{ data.account.balance }}" required>
+                        </div>
+                        <button type="submit" class="btn btn-warning">Withdraw</button>
+                    </form>
+                </div>
+
+            {% elif active_form == 'transfer' and data.has_account %}
+                <div class="card p-4 shadow-sm">
+                    <h4>Send Money (Transfer)</h4>
+                    <form method="POST">
+                        <input type="hidden" name="transfer_money" value="1">
+                        
+                        <div class="mb-3">
+                            <label>From Account (Your Account)</label>
+                            <input type="text" class="form-control" 
+                                   value="{{ data.account.account_no }} – {{ data.account.account_type }}" 
+                                   disabled>
+                            <input type="hidden" name="from_account" value="{{ data.account.account_no }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label>To Account Number</label>
+                            <input type="text" name="to_account_no" id="to_account_no" class="form-control" 
+                                   placeholder="Enter recipient account number" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Recipient Name</label>
+                            <input type="text" id="recipient_name" class="form-control" 
+                                   placeholder="Will auto-fill..." disabled>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Amount (INR)</label>
+                            <input type="number" name="amount" class="form-control" 
+                                   step="0.01" min="1" max="{{ data.account.balance }}" 
+                                   placeholder="Max: Rs.{{ data.account.balance|round(2) }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Remarks (Optional)</label>
+                            <input type="text" name="remarks" class="form-control" 
+                                   placeholder="e.g., Gift, Rent">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Transfer Money</button>
+                    </form>
+                </div>
+
+             
+                <script>
+                    document.getElementById('to_account_no').addEventListener('blur', function() {
+                        const accNo = this.value.trim();
+                        const nameField = document.getElementById('recipient_name');
+                        if (!accNo) {
+                            nameField.value = '';
+                            return;
+                        }
+                        fetch(`/get_account_holder/${accNo}`)
+                            .then(res => res.json())
+                            .then(data => {
+                                nameField.value = data.name ? data.name : 'Invalid Account';
+                            })
+                            .catch(() => {
+                                nameField.value = 'Error';
+                            });
+                    });
+                </script>
+
+            {% elif active_form == 'fd' and data.has_account %}
+                <div class="card p-4 shadow-sm">
+                    <h4>Create Fixed Deposit</h4>
+                    <form method="POST">
+                        <input type="hidden" name="fixed_deposit" value="1">
+                        <div class="mb-3">
+                            <label>From Account</label>
+                            <input type="text" class="form-control" value="{{ data.account.account_no }} – Balance: Rs.{{ data.account.balance|round(2) }}" disabled>
+                        </div>
+                        <div class="mb-3">
+                            <label>Principal Amount (INR)</label>
+                            <input type="number" name="principal" class="form-control" step="0.01" min="1000" max="{{ data.account.balance }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Tenure (months)</label>
+                            <select name="tenure" class="form-select" required>
+                                <option value="6">6 months</option>
+                                <option value="12">12 months</option>
+                                <option value="24">24 months</option>
+                                <option value="36">36 months</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-info text-white">Create FD</button>
+                    </form>
+                </div>
+
+            {% elif active_form == 'loan' %}
+                <div class="card p-4 shadow-sm">
+                    <h4>Apply for Loan</h4>
+                    <form method="POST" id="loanForm">
+                        <input type="hidden" name="apply_loan" value="1">
+                        <div class="mb-3">
+                            <label>Loan Type</label>
+                            <select name="loan_type" id="loan_type" class="form-select" required>
+                                <option value="Home Loan">Home Loan</option>
+                                <option value="Car Loan">Car Loan</option>
+                                <option value="Education Loan">Education Loan</option>
+                                <option value="Personal Loan">Personal Loan</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label>Principal Amount (INR)</label>
+                            <input type="number" id="principal" name="principal" class="form-control" step="1000" min="10000" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Tenure (months)</label>
+                            <input type="number" id="tenure" name="tenure" class="form-control" min="12" max="120" required>
+                        </div>
+
+                        <div class="alert alert-info mt-3">
+                            <strong>Interest Rate (p.a.):</strong> <span id="rateDisplay">8.0 %</span>
+                            <br><strong>Estimated EMI:</strong> <span id="emiDisplay">Rs.0.00</span>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Submit Request</button>
+                    </form>
+                </div>
+
+                <script>
+                    const rates = { 'Home Loan':8.0, 'Car Loan':9.5, 'Education Loan':7.5, 'Personal Loan':12.0 };
+                    const loanSelect = document.getElementById('loan_type');
+                    const principalInp = document.getElementById('principal');
+                    const tenureInp = document.getElementById('tenure');
+                    const rateSpan = document.getElementById('rateDisplay');
+                    const emiSpan = document.getElementById('emiDisplay');
+
+                    function calcEMI() {
+                        const type = loanSelect.value;
+                        const rate = rates[type] / 100 / 12;
+                        const p = parseFloat(principalInp.value) || 0;
+                        const n = parseInt(tenureInp.value) || 0;
+                        if (p && n && rate) {
+                            const power = Math.pow(1 + rate, n);
+                            const emi = p * rate * power / (power - 1);
+                            rateSpan.textContent = rates[type] + ' %';
+                            emiSpan.textContent = 'Rs.' + emi.toFixed(2);
+                        } else {
+                            rateSpan.textContent = rates[type] + ' %';
+                            emiSpan.textContent = 'Rs.0.00';
+                        }
+                    }
+
+                    loanSelect.addEventListener('change', calcEMI);
+                    principalInp.addEventListener('input', calcEMI);
+                    tenureInp.addEventListener('input', calcEMI);
+                    calcEMI();
+                </script>
+
+            {% elif active_form == 'review_loans' and user.type == 'staff' %}
+                <div class="card p-4 shadow-sm">
+                    <h4>Review Loan Requests</h4>
+                    {% if data.pending_loans %}
+                        <table class="table table-striped">
+                            <thead class="table-dark">
+                                <tr><th>#</th><th>User</th><th>Type</th><th>Amount</th><th>Tenure</th><th>Rate</th><th>Action</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for l in data.pending_loans %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ l.user_id }}</td>
+                                        <td>{{ l.loan_type }}</td>
+                                        <td>Rs.{{ l.principal_amount|round(2) }}</td>
+                                        <td>{{ l.tenure_months }} mo</td>
+                                        <td>{{ l.interest_rate }} %</td>
+                                        <td>
+                                            <form method="POST" class="d-inline">
+                                                <input type="hidden" name="request_id" value="{{ l.request_id }}">
+                                                <button name="approve_loan" class="btn btn-sm btn-success">Approve</button>
+                                            </form>
+                                            <form method="POST" class="d-inline">
+                                                <input type="hidden" name="request_id" value="{{ l.request_id }}">
+                                                <button name="reject_loan" class="btn btn-sm btn-danger">Reject</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="text-muted">No pending loans.</p>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+   
+    {% if user.type == 'customer' and data.has_account %}
+        <div class="row mt-5 g-4">
+            <div class="col-md-4">
+                <div class="card text-center p-4 border-primary shadow-sm">
+                    <h5 class="text-primary">Balance</h5>
+                    <p class="display-5 fw-bold text-success">Rs.{{ data.account.balance|round(2) }}</p>
+                    <small class="text-muted">Acc: {{ data.account.account_no }}</small>
+                </div>
+            </div>
+
+            {% if data.active_loan %}
+                <div class="col-md-4">
+                    <div class="card text-center p-4 border-danger shadow-sm">
+                        <h5 class="text-danger">Active Loan</h5>
+                        <p class="display-6">Rs.{{ data.active_loan.principal_amount|round(2) }}</p>
+                        <p><strong>EMI:</strong> Rs.{{ data.active_loan.emi_amount|round(2) }} × {{ data.active_loan.tenure_months }} mo</p>
+                        <small class="text-muted">{{ data.active_loan.loan_type }} | {{ data.active_loan.start_date }}</small>
+                    </div>
+                </div>
+            {% elif data.loan_requests %}
+                <div class="col-md-4">
+                    <div class="card text-center p-4 border-secondary shadow-sm">
+                        <h5 class="text-secondary">Loan Status</h5>
+                        {% set latest = data.loan_requests[0] %}
+                        <p><span class="badge {% if latest.status == 'Approved' %}badge-approved{% elif latest.status == 'Rejected' %}badge-rejected{% else %}badge-pending{% endif %}">
+                            {{ latest.status }}
+                        </span></p>
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="col-md-4">
+                <div class="card text-center p-4 border-info shadow-sm">
+                    <h5 class="text-info">Fixed Deposits</h5>
+                    <p class="display-6">{{ data.fds|length }}</p>
+                    <small class="text-muted">Active</small>
+                </div>
+            </div>
+        </div>
+
+       
+        <div class="mt-5">
+            <h4>Last 5 Transactions</h4>
+            {% if data.recent_txns_table %}
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Sr no.</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>After</th>
+                            <th>Related</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in data.recent_txns_table %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'primary' if t.txn_type == 'Transfer' else 'success' if t.txn_type == 'Deposit' else 'danger' }}">
+                                        {{ t.txn_type }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if t.txn_type == 'Transfer' and t.remarks.startswith('To:') %}
+                                        <span class="amount-negative">-Rs.{{ t.amount|round(2) }}</span>
+                                    {% elif t.txn_type == 'Transfer' and t.remarks.startswith('From:') %}
+                                        <span class="amount-positive">+Rs.{{ t.amount|round(2) }}</span>
+                                    {% elif t.txn_type == 'Withdrawal' %}
+                                        <span class="amount-negative">-Rs.{{ t.amount|round(2) }}</span>
+                                    {% else %}
+                                        <span class="amount-positive">+Rs.{{ t.amount|round(2) }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>Rs.{{ t.balance_after|round(2) }}</td>
+                                <td>
+                                    {% if t.txn_type == 'Transfer' and t.remarks.startswith('To:') %}
+                                        {{ t.remarks }}
+                                    {% elif t.txn_type == 'Transfer' and t.remarks.startswith('From:') %}
+                                        {{ t.remarks }}
+                                    {% else %}
+                                        Self
+                                    {% endif %}
+                                </td>
+                                <td>{{ t.txn_date.strftime('%b %d, %I:%M %p') }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="text-muted">No transactions yet.</p>
+            {% endif %}
+        </div>
+
+       
+        {% if data.fds %}
+            <div class="mt-5">
+                <h4>Active Fixed Deposits</h4>
+                <div class="row g-3">
+                    {% for fd in data.fds %}
+                        <div class="col-md-6">
+                            <div class="card border-info">
+                                <div class="card-body">
+                                    <h6>FD #{{ fd.fd_id }}</h6>
+                                    <p><strong>Principal:</strong> Rs.{{ fd.principal|round(2) }}</p>
+                                    <p><strong>Tenure:</strong> {{ fd.tenure_months }} months</p>
+                                    <p><strong>Maturity:</strong> {{ fd.maturity_date }} (Rs.{{ fd.maturity_amount|round(2) }})</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+        
+        <div class="mt-5">
+            <h4>Transaction Flow (Last 30 Days – {{ data.recent_txns|length }} entries)</h4>
+            
+            <div id="chart-data" 
+                 data-txns='{{ data.recent_txns|tojson }}'
+                 data-account-no='{{ data.account.account_no }}'
+                 style="display:none;">
+            </div>
+
+            <div class="card p-3 shadow-sm">
+                <canvas id="txnChart" height="300"></canvas>
+            </div>
+        </div>
+
+    {% elif user.type == 'customer' and not data.has_account %}
+        <div class="alert alert-info mt-4 text-center">
+            <h5>No account yet.</h5>
+            <p>Use <strong>"Open Bank Account"</strong> to begin.</p>
+        </div>
+
+    {% else %} 
+        <div class="mt-5">
+            <h4>Bank Overview</h4>
+            <div class="row g-4 text-center">
+                <div class="col-md-3">
+                    <div class="card p-4 border-primary shadow-sm">
+                        <h3 class="text-primary">{{ data.total_accounts }}</h3>
+                        <p class="text-muted">Total Accounts</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card p-4 border-info shadow-sm">
+                        <h3 class="text-info">{{ data.total_fds }}</h3>
+                        <p class="text-muted">Total FDs</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card p-4 border-warning shadow-sm">
+                        <h3 class="text-warning">{{ data.pending_loans|length }}</h3>
+                        <p class="text-muted">Pending Loans</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card p-4 border-success shadow-sm">
+                        <h3 class="text-success">Rs.{{ data.total_savings|round(2) }}</h3>
+                        <p class="text-muted">Total Savings</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="mt-5">
+            <h4>Last 5 Bank Transactions</h4>
+            {% if data.bank_recent_txns %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-sm">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Sr no.</th><th>User ID</th><th>Name</th><th>Acc</th><th>Type</th><th>Amount</th><th>After</th><th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in data.bank_recent_txns %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td>{{ t.user_id }}</td>
+                                    <td>{{ t.full_name }}</td>
+                                    <td>{{ t.account_no }}</td>
+                                    <td><span class="badge bg-{{ 'success' if t.txn_type=='Deposit' else 'danger' }}">{{ t.txn_type }}</span></td>
+                                    <td>Rs.{{ t.amount|round(2) }}</td>
+                                    <td>Rs.{{ t.balance_after|round(2) }}</td>
+                                    <td>{{ t.txn_date.strftime('%b %d, %I:%M %p') }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">No transactions.</p>
+            {% endif %}
+        </div>
+
+      
+        <div class="mt-4">
+            <a href="{{ url_for('dashboard', form='view_loans') }}" 
+               class="btn btn-outline-danger btn-lg oblong {% if active_form=='view_loans' %}active{% endif %}">
+               View All Active Loans
+            </a>
+            <a href="{{ url_for('dashboard', form='view_fds') }}" 
+               class="btn btn-outline-info btn-lg oblong ms-2 {% if active_form=='view_fds' %}active{% endif %}">
+               View All Fixed Deposits
+            </a>
+        </div>
+
+       
+        {% if active_form == 'view_loans' %}
+            <div class="mt-4 card p-4 shadow-sm">
+                <h4>All Active Loans</h4>
+                {% if data.all_active_loans %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Sr no.</th>
+                                    <th>User</th>
+                                    <th>Account</th>
+                                    <th>Type</th>
+                                    <th>Principal</th>
+                                    <th>EMI</th>
+                                    <th>Tenure</th>
+                                    <th>Start Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for l in data.all_active_loans %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ l.full_name }} ({{ l.user_id }})</td>
+                                        <td>{{ l.account_no }}</td>
+                                        <td>{{ l.loan_type }}</td>
+                                        <td>Rs.{{ l.principal_amount|round(2) }}</td>
+                                        <td>Rs.{{ l.emi_amount|round(2) }}</td>
+                                        <td>{{ l.tenure_months }} mo</td>
+                                        <td>{{ l.start_date }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No active loans.</p>
+                {% endif %}
+            </div>
+        {% endif %}
+
+     
+        {% if active_form == 'view_fds' %}
+            <div class="mt-4 card p-4 shadow-sm">
+                <h4>All Fixed Deposits</h4>
+                {% if data.all_fds %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Sr no.</th>
+                                    <th>User</th>
+                                    <th>Account</th>
+                                    <th>Principal</th>
+                                    <th>Tenure</th>
+                                    <th>Maturity Date</th>
+                                    <th>Maturity Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for fd in data.all_fds %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ fd.full_name }} ({{ fd.user_id }})</td>
+                                        <td>{{ fd.account_no }}</td>
+                                        <td>Rs.{{ fd.principal|round(2) }}</td>
+                                        <td>{{ fd.tenure_months }} mo</td>
+                                        <td>{{ fd.maturity_date }}</td>
+                                        <td>Rs.{{ fd.maturity_amount|round(2) }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No fixed deposits.</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    {% endif %}
+</section>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const chartDiv = document.getElementById('chart-data');
+        if (!chartDiv || !chartDiv.dataset.txns) return;
+
+        const txns = JSON.parse(chartDiv.dataset.txns);
+        const accountNo = parseInt(chartDiv.dataset.accountNo);
+
+        if (txns.length === 0) {
+            document.getElementById('txnChart').parentElement.innerHTML = '<p class="text-muted text-center">No transactions in last 30 days.</p>';
+            return;
+        }
+
+        const ctx = document.getElementById('txnChart').getContext('2d');
+
+        const labels = [];
+        const amounts = [];
+        const colors = [];
+
+        txns.forEach(t => {
+            const date = new Date(t.txn_date);
+            labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+
+            const amount = parseFloat(t.amount);
+            let isDebit = false;
+
+            if (t.txn_type === 'Withdrawal') {
+                isDebit = true;
+            } else if (t.txn_type === 'Transfer') {
+                isDebit = t.remarks && t.remarks.startsWith('To:');
+            }
+
+            amounts.push(isDebit ? -amount : amount);
+            colors.push(isDebit ? '#dc3545' : '#28a745');
+        });
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: amounts,
+                    backgroundColor: colors,
+                    borderColor: colors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                const value = context.raw;
+                                const label = value < 0 ? 'Debited' : 'Credited';
+                                return `Rs.${Math.abs(value).toFixed(2)} (${label})`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: value => 'Rs.' + Math.abs(value).toFixed(0),
+                            font: { size: 12 }
+                        },
+                        grid: { color: '#e9ecef' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            maxRotation: 0,
+                            font: { size: 11 }
+                        }
+                    }
+                },
+                barThickness: 25,
+                categoryPercentage: 0.6,
+                barPercentage: 0.8
+            }
+        });
+    });
+</script>
+
+
+<script>
+    function updateClock() {
+        const now = new Date();
+        const opts = { timeZone: 'Asia/Kolkata', hour12:true, hour:'2-digit', minute:'2-digit', second:'2-digit' };
+        const t = now.toLocaleTimeString('en-US', opts);
+        const date = now.toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
+        document.getElementById('live-clock').innerHTML = `<strong>Time:</strong> ${t} IST | ${date}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
